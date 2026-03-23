@@ -81,6 +81,46 @@
             @endforeach
         </tbody>
     </table>
+     {{-- Gráfico --}}
+    <div style="background:white; border-radius:8px; padding:1.5rem;
+                border:1px solid #e0e0e0; margin-top:1.5rem;">
+        <h2 style="font-size:15px; color:#555; margin-bottom:1rem;">
+            PIB per capita por país (US$)
+        </h2>
+        <canvas id="graficoPib" height="80"></canvas>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        
+        const paises = @json($paises->pluck('nome'));
+        const valores = @json($paises->pluck('pib_per_capita'));
+
+        new Chart(document.getElementById('graficoPib'), {
+            type: 'bar',
+            data: {
+                labels: paises,
+                datasets: [{
+                    label: 'PIB per capita (US$)',
+                    data: valores,
+                    backgroundColor: '#378ADD',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: value => 'US$ ' + value.toLocaleString('pt-BR')
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
