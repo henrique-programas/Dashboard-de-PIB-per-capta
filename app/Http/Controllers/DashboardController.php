@@ -8,6 +8,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        
         // mapa de tradução das regiões
         $traducaoRegioes = [
             'Latin America & Caribbean '                             => 'América Latina e Caribe',
@@ -24,46 +25,55 @@ class DashboardController extends Controller
             'Sub-Saharan Africa'                                     => 'África Subsaariana',
             'Aggregates'                                             => 'Agregados',
             'Outras regiões'                                         => 'Outras regiões',
-        ];
-
-        // busca todos os países e traduz a região de cada um
+            ];
+            
+            // busca todos os países e traduz a região de cada um
         $paises = Pais::where('ano', 2022)
-                      ->orderBy('pib_per_capita', 'desc')
-                      ->get()
+        ->orderBy('pib_per_capita', 'desc')
+        ->get()
                       ->map(function ($pais) use ($traducaoRegioes) {
                           $pais->regiao = $traducaoRegioes[$pais->regiao] ?? $pais->regiao;
                           return $pais;
-                      });
-
-        $top10 = $paises->take(10);
-
-        $maior  = $paises->first();
-        $menor  = $paises->last();
-        $media  = Pais::where('ano', 2022)->avg('pib_per_capita');
+                          });
+                          
+                          $top10 = $paises->take(10);
+                          
+                          $maior  = $paises->first();
+                          $menor  = $paises->last();
+                          $media  = Pais::where('ano', 2022)->avg('pib_per_capita');
         $brasil = $paises->firstWhere('codigo', 'BRA');
-
+        
+        $paisesMap = $paises->mapWithKeys(function ($p) {
+            return [$p->codigo => [
+                'nome'   => $p->nome,
+                'pib'    => $p->pib_per_capita,
+                'regiao' => $p->regiao,
+            ]];
+        });
+        
         $porRegiao = Pais::where('ano', 2022)
-                         ->selectRaw('regiao, COUNT(*) as total, AVG(pib_per_capita) as media_pib')
-                         ->groupBy('regiao')
-                         ->orderBy('media_pib', 'desc')
-                         ->get()
-                         ->map(function ($r) use ($traducaoRegioes) {
-                             $r->regiao = $traducaoRegioes[$r->regiao] ?? $r->regiao;
-                             return $r;
-                         })
-                         ->filter(function ($r) {
-                             // remove "Agregados" — não é uma região geográfica real
-                             return $r->regiao !== 'Agregados';
-                         });
-
-        return view('home', [
-            'paises'    => $paises,
-            'top10'     => $top10,
-            'maior'     => $maior,
-            'menor'     => $menor,
-            'media'     => $media,
-            'brasil'    => $brasil,
-            'porRegiao' => $porRegiao,
-        ]);
+        ->selectRaw('regiao, COUNT(*) as total, AVG(pib_per_capita) as media_pib')
+        ->groupBy('regiao')
+        ->orderBy('media_pib', 'desc')
+        ->get()
+        ->map(function ($r) use ($traducaoRegioes) {
+            $r->regiao = $traducaoRegioes[$r->regiao] ?? $r->regiao;
+            return $r;
+            })
+            ->filter(function ($r) {
+                // remove "Agregados" — não é uma região geográfica real
+                return $r->regiao !== 'Agregados';
+                });
+                
+                return view('home', [
+                    'paises'    => $paises,
+                    'top10'     => $top10,
+                    'maior'     => $maior,
+                    'menor'     => $menor,
+                    'media'     => $media,
+                    'brasil'    => $brasil,
+                    'porRegiao' => $porRegiao,
+                    'paisesMap' => $paisesMap,
+                    ]);
     }
 }

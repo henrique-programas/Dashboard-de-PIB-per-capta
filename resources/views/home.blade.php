@@ -59,6 +59,26 @@
             </div>
         </div>
 
+        {{-- Mapa mundi --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-sm font-medium text-gray-500">Mapa mundial — PIB per capita 2022</p>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-400">Menor PIB</span>
+                    <div style="width:120px;height:8px;border-radius:4px;background:linear-gradient(to right, #dbeafe, #1e40af)"></div>
+                    <span class="text-xs text-gray-400">Maior PIB</span>
+                </div>
+            </div>
+            <div id="mapa-container" style="width:100%;position:relative;">
+                <svg id="mapa-mundo" style="width:100%;height:auto;display:block;"></svg>
+                <div id="mapa-tooltip"
+                     style="display:none;position:absolute;background:white;border:1px solid #e5e7eb;
+                            border-radius:8px;padding:8px 12px;font-size:12px;pointer-events:none;
+                            box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+        </div>
+
         {{-- Tabela --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between mb-4">
@@ -189,6 +209,105 @@
 
         busca.addEventListener('input', filtrar);
         filtroRegiao.addEventListener('change', filtrar);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script>
+        const dadosPaises = @json($paisesMap);
+    
+        const largura = document.getElementById('mapa-mundo').parentElement.offsetWidth;
+        const altura  = largura * 0.5;
+        document.getElementById('mapa-mundo').setAttribute('viewBox', `0 0 ${largura} ${altura}`);
+    
+        const svg = d3.select('#mapa-mundo');
+        const g   = svg.append('g');
+    
+        const projecao = d3.geoNaturalEarth1()
+            .scale(largura / 6.3)
+            .translate([largura / 2, altura / 2]);
+    
+        const caminho = d3.geoPath().projection(projecao);
+    
+        const valoresPib = Object.values(dadosPaises).map(d => d.pib);
+        const escala = d3.scaleSequentialLog()
+            .domain([Math.min(...valoresPib), Math.max(...valoresPib)])
+            .interpolator(d3.interpolateBlues);
+    
+        const tooltip = document.getElementById('mapa-tooltip');
+    
+        // tabela de conversão: numérico ISO 3166-1 → alfa-3
+        // sem duplicatas, sem zeros à esquerda (que viram octais em JS)
+        const tabelaCodigos = {
+            4:'AFG', 8:'ALB', 12:'DZA', 20:'AND', 24:'AGO', 31:'AZE', 32:'ARG',
+            36:'AUS', 40:'AUT', 50:'BGD', 51:'ARM', 56:'BEL', 64:'BTN', 68:'BOL',
+            70:'BIH', 76:'BRA', 100:'BGR', 112:'BLR', 116:'KHM', 120:'CMR',
+            124:'CAN', 144:'LKA', 152:'CHL', 156:'CHN', 170:'COL', 180:'COD',
+            188:'CRI', 191:'HRV', 192:'CUB', 196:'CYP', 203:'CZE', 208:'DNK',
+            214:'DOM', 218:'ECU', 222:'SLV', 231:'ETH', 233:'EST', 246:'FIN',
+            250:'FRA', 266:'GAB', 268:'GEO', 276:'DEU', 288:'GHA', 300:'GRC',
+            320:'GTM', 332:'HTI', 336:'VAT', 340:'HND', 348:'HUN', 352:'ISL',
+            356:'IND', 360:'IDN', 364:'IRN', 368:'IRQ', 372:'IRL', 376:'ISR',
+            380:'ITA', 388:'JAM', 392:'JPN', 398:'KAZ', 400:'JOR', 404:'KEN',
+            408:'PRK', 410:'KOR', 414:'KWT', 417:'KGZ', 418:'LAO', 422:'LBN',
+            428:'LVA', 430:'LBR', 434:'LBY', 440:'LTU', 442:'LUX', 454:'MWI',
+            458:'MYS', 470:'MLT', 484:'MEX', 492:'MCO', 496:'MNG', 499:'MNE',
+            504:'MAR', 508:'MOZ', 516:'NAM', 524:'NPL', 528:'NLD', 554:'NZL',
+            558:'NIC', 562:'NER', 566:'NGA', 578:'NOR', 586:'PAK', 591:'PAN',
+            600:'PRY', 604:'PER', 608:'PHL', 616:'POL', 620:'PRT', 630:'PRI',
+            634:'QAT', 642:'ROU', 643:'RUS', 674:'SMR', 682:'SAU', 686:'SEN',
+            688:'SRB', 694:'SLE', 703:'SVK', 704:'VNM', 705:'SVN', 706:'SOM',
+            710:'ZAF', 716:'ZWE', 724:'ESP', 729:'SDN', 752:'SWE', 756:'CHE',
+            760:'SYR', 762:'TJK', 764:'THA', 780:'TTO', 784:'ARE', 792:'TUR',
+            795:'TKM', 800:'UGA', 804:'UKR', 807:'MKD', 818:'EGY', 826:'GBR',
+            840:'USA', 858:'URY', 860:'UZB', 862:'VEN', 887:'YEM', 894:'ZMB',
+        };
+    
+        function converterCodigo(idNumerico) {
+            return tabelaCodigos[parseInt(idNumerico)] || null;
+        }
+    
+        // busca o GeoJSON uma única vez
+        d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+            .then(function(mundo) {
+                const paises = topojson.feature(mundo, mundo.objects.countries);
+    
+                g.selectAll('path')
+                    .data(paises.features)
+                    .enter()
+                    .append('path')
+                    .attr('d', caminho)
+                    .attr('fill', function(d) {
+                        const codigo = converterCodigo(d.id);
+                        const dado   = dadosPaises[codigo];
+                        return dado ? escala(dado.pib) : '#e5e7eb';
+                    })
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 0.4)
+                    .style('cursor', 'pointer')
+                    .on('mousemove', function(event, d) {
+                        const codigo = converterCodigo(d.id);
+                        const dado   = dadosPaises[codigo];
+                        const [mx, my] = d3.pointer(event, document.getElementById('mapa-container'));
+    
+                        tooltip.style.display = 'block';
+                        tooltip.style.left    = (mx + 12) + 'px';
+                        tooltip.style.top     = (my - 40) + 'px';
+    
+                        if (dado) {
+                            tooltip.innerHTML = `
+                                <div style="font-weight:600;color:#111;margin-bottom:2px">${dado.nome}</div>
+                                <div style="color:#6b7280">${dado.regiao}</div>
+                                <div style="color:#2563eb;font-weight:600;margin-top:4px">
+                                    US$ ${Number(dado.pib).toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})}
+                                </div>`;
+                        } else {
+                            tooltip.innerHTML = '<div style="color:#9ca3af">Sem dados</div>';
+                        }
+                    })
+                    .on('mouseleave', function() {
+                        tooltip.style.display = 'none';
+                    });
+            });
     </script>
 
 </body>
