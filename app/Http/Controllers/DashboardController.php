@@ -8,30 +8,53 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // top 10 para o gráfico e ranking
-        $top10 = Pais::where('ano', 2022)
-                     ->orderBy('pib_per_capita', 'desc')
-                     ->limit(10)
-                     ->get();
+        // mapa de tradução das regiões
+        $traducaoRegioes = [
+            'Latin America & Caribbean '                             => 'América Latina e Caribe',
+            'Sub-Saharan Africa'                                     => 'África Subsaariana',
+            'Sub-Saharan Africa '                                    => 'África Subsaariana',
+            'Sub-Saharan Africa'                                     => 'África Subsaariana',
+            'Aggregates'                                             => 'Agregados',
+            'North America'                                          => 'América do Norte',
+            'Latin America & Caribbean'                              => 'América Latina e Caribe',
+            'Europe & Central Asia'                                  => 'Europa e Ásia Central',
+            'Middle East, North Africa, Afghanistan & Pakistan'      => 'Oriente Médio e Norte da África',
+            'East Asia & Pacific'                                    => 'Ásia Oriental e Pacífico',
+            'South Asia'                                             => 'Ásia do Sul',
+            'Sub-Saharan Africa'                                     => 'África Subsaariana',
+            'Aggregates'                                             => 'Agregados',
+            'Outras regiões'                                         => 'Outras regiões',
+        ];
 
-        // todos os países para a tabela
+        // busca todos os países e traduz a região de cada um
         $paises = Pais::where('ano', 2022)
                       ->orderBy('pib_per_capita', 'desc')
-                      ->get();
+                      ->get()
+                      ->map(function ($pais) use ($traducaoRegioes) {
+                          $pais->regiao = $traducaoRegioes[$pais->regiao] ?? $pais->regiao;
+                          return $pais;
+                      });
+
+        $top10 = $paises->take(10);
 
         $maior  = $paises->first();
-        $menor  = Pais::where('ano', 2022)
-                      ->orderBy('pib_per_capita', 'asc')
-                      ->first();
+        $menor  = $paises->last();
         $media  = Pais::where('ano', 2022)->avg('pib_per_capita');
-        $brasil = Pais::where('codigo', 'BRA')->where('ano', 2022)->first();
+        $brasil = $paises->firstWhere('codigo', 'BRA');
 
-        // conta quantos países por região para o gráfico de rosca
         $porRegiao = Pais::where('ano', 2022)
                          ->selectRaw('regiao, COUNT(*) as total, AVG(pib_per_capita) as media_pib')
                          ->groupBy('regiao')
                          ->orderBy('media_pib', 'desc')
-                         ->get();
+                         ->get()
+                         ->map(function ($r) use ($traducaoRegioes) {
+                             $r->regiao = $traducaoRegioes[$r->regiao] ?? $r->regiao;
+                             return $r;
+                         })
+                         ->filter(function ($r) {
+                             // remove "Agregados" — não é uma região geográfica real
+                             return $r->regiao !== 'Agregados';
+                         });
 
         return view('home', [
             'paises'    => $paises,

@@ -2,154 +2,125 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard PIB per capita</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: sans-serif; padding: 2rem; background: #f5f5f5; color: #333; }
-        h1 { margin-bottom: 0.25rem; }
-        .subtitulo { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.2rem;
-            border: 1px solid #e0e0e0;
-        }
-        .card .label { font-size: 12px; color: #888; margin-bottom: 4px; }
-        .card .valor { font-size: 22px; font-weight: bold; }
-        .card .sub   { font-size: 13px; color: #555; margin-top: 4px; }
-
-        .graficos {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .painel {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid #e0e0e0;
-        }
-        .painel h2 { font-size: 14px; color: #555; margin-bottom: 1rem; }
-
-        .filtros {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        .filtros input, .filtros select {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
-        }
-
-        table { width: 100%; background: white; border-radius: 8px;
-                border-collapse: collapse; border: 1px solid #e0e0e0; }
-        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        th { font-size: 12px; color: #888; font-weight: 600; background: #fafafa; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #f9f9f9; }
-
-        .badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: #e8f4fd;
-            color: #1a6fa8;
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
 
-    <h1>Dashboard PIB per capita mundial</h1>
-    <p class="subtitulo">Fonte: World Bank API — ano 2022</p>
+    {{-- Header --}}
+    <header class="bg-white border-b border-gray-200 px-8 py-4 mb-6">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-semibold text-gray-900">Dashboard PIB per capita mundial</h1>
+                <p class="text-sm text-gray-400 mt-0.5">Fonte: World Bank API — ano 2022</p>
+            </div>
+            <span class="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                {{ $paises->count() }} países
+            </span>
+        </div>
+    </header>
 
-    {{-- Cards de métricas --}}
-    <div class="cards">
-        <div class="card">
-            <div class="label">Maior PIB per capita</div>
-            <div class="valor">US$ {{ number_format($maior->pib_per_capita, 0, ',', '.') }}</div>
-            <div class="sub">{{ $maior->nome }}</div>
-        </div>
-        <div class="card">
-            <div class="label">Menor PIB per capita</div>
-            <div class="valor">US$ {{ number_format($menor->pib_per_capita, 0, ',', '.') }}</div>
-            <div class="sub">{{ $menor->nome }}</div>
-        </div>
-        <div class="card">
-            <div class="label">Média mundial</div>
-            <div class="valor">US$ {{ number_format($media, 0, ',', '.') }}</div>
-            <div class="sub">{{ $paises->count() }} países</div>
-        </div>
-        <div class="card">
-            <div class="label">Brasil</div>
-            <div class="valor">US$ {{ number_format($brasil->pib_per_capita, 0, ',', '.') }}</div>
-            <div class="sub">{{ $brasil->regiao }}</div>
-        </div>
-    </div>
+    <main class="max-w-7xl mx-auto px-8 pb-12">
 
-    {{-- Gráficos --}}
-    <div class="graficos">
-        <div class="painel">
-            <h2>Top 10 países — PIB per capita (US$)</h2>
-            <canvas id="graficoTop10" height="120"></canvas>
+        {{-- Cards de métricas --}}
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs text-gray-400 mb-1">Maior PIB per capita</p>
+                <p class="text-2xl font-semibold">US$ {{ number_format($maior->pib_per_capita, 0, ',', '.') }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ $maior->nome }}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs text-gray-400 mb-1">Menor PIB per capita</p>
+                <p class="text-2xl font-semibold">US$ {{ number_format($menor->pib_per_capita, 0, ',', '.') }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ $menor->nome }}</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs text-gray-400 mb-1">Média mundial</p>
+                <p class="text-2xl font-semibold">US$ {{ number_format($media, 0, ',', '.') }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ $paises->count() }} países</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs text-gray-400 mb-1">Brasil</p>
+                <p class="text-2xl font-semibold">US$ {{ number_format($brasil->pib_per_capita, 0, ',', '.') }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ $brasil->regiao }}</p>
+            </div>
         </div>
-        <div class="painel">
-            <h2>Média por região</h2>
-            <canvas id="graficoRegioes" height="120"></canvas>
-        </div>
-    </div>
 
-    {{-- Tabela com filtro --}}
-    <div class="painel">
-        <h2>Todos os países</h2>
-        <div class="filtros">
-            <input type="text" id="busca" placeholder="Buscar país...">
-            <select id="filtroRegiao">
-                <option value="">Todas as regiões</option>
-                @foreach($porRegiao as $r)
-                    <option value="{{ $r->regiao }}">{{ $r->regiao }}</option>
-                @endforeach
-            </select>
+        {{-- Gráficos --}}
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="col-span-2 bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4">Top 10 países — PIB per capita (US$)</p>
+                <canvas id="graficoTop10" height="100"></canvas>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4">Média por região</p>
+                <canvas id="graficoRegioes" height="200"></canvas>
+            </div>
         </div>
-        <table id="tabelaPaises">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>País</th>
-                    <th>Código</th>
-                    <th>Região</th>
-                    <th>PIB per capita</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($paises as $index => $pais)
-                <tr data-nome="{{ strtolower($pais->nome) }}" data-regiao="{{ $pais->regiao }}">
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ $pais->nome }}</td>
-                    <td><span class="badge">{{ $pais->codigo }}</span></td>
-                    <td>{{ $pais->regiao }}</td>
-                    <td>US$ {{ number_format($pais->pib_per_capita, 0, ',', '.') }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+
+        {{-- Tabela --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-sm font-medium text-gray-500">Todos os países</p>
+                <div class="flex gap-2">
+                    <input
+                        type="text"
+                        id="busca"
+                        placeholder="Buscar país..."
+                        class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    >
+                    <select
+                        id="filtroRegiao"
+                        class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    >
+                        <option value="">Todas as regiões</option>
+                        @foreach($porRegiao as $r)
+                            <option value="{{ $r->regiao }}">{{ $r->regiao }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <table class="w-full" id="tabelaPaises">
+                <thead>
+                    <tr class="border-b border-gray-100">
+                        <th class="text-left text-xs text-gray-400 font-medium pb-2 w-12">#</th>
+                        <th class="text-left text-xs text-gray-400 font-medium pb-2">País</th>
+                        <th class="text-left text-xs text-gray-400 font-medium pb-2">Código</th>
+                        <th class="text-left text-xs text-gray-400 font-medium pb-2">Região</th>
+                        <th class="text-right text-xs text-gray-400 font-medium pb-2">PIB per capita</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($paises as $index => $pais)
+                    <tr
+                        class="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                        data-nome="{{ strtolower($pais->nome) }}"
+                        data-regiao="{{ $pais->regiao }}"
+                    >
+                        <td class="py-2.5 text-sm text-gray-400">{{ $index + 1 }}</td>
+                        <td class="py-2.5 text-sm font-medium">{{ $pais->nome }}</td>
+                        <td class="py-2.5">
+                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-mono">
+                                {{ $pais->codigo }}
+                            </span>
+                        </td>
+                        <td class="py-2.5 text-sm text-gray-500">{{ $pais->regiao }}</td>
+                        <td class="py-2.5 text-sm text-right font-medium">
+                            US$ {{ number_format($pais->pib_per_capita, 0, ',', '.') }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // gráfico top 10
-        const nomes  = @json($top10->pluck('nome'));
+        const nomes   = @json($top10->pluck('nome'));
         const valores = @json($top10->pluck('pib_per_capita'));
 
         new Chart(document.getElementById('graficoTop10'), {
@@ -158,8 +129,8 @@
                 labels: nomes,
                 datasets: [{
                     data: valores,
-                    backgroundColor: '#378ADD',
-                    borderRadius: 4,
+                    backgroundColor: '#3B82F6',
+                    borderRadius: 6,
                 }]
             },
             options: {
@@ -175,7 +146,6 @@
             }
         });
 
-        // gráfico de regiões
         const regioes      = @json($porRegiao->pluck('regiao'));
         const mediasRegiao = @json($porRegiao->pluck('media_pib'));
 
@@ -185,7 +155,7 @@
                 labels: regioes,
                 datasets: [{
                     data: mediasRegiao,
-                    backgroundColor: ['#185FA5','#1D9E75','#EF9F27','#D85A30','#7F77DD','#D4537E','#888780'],
+                    backgroundColor: ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6B7280'],
                     borderRadius: 4,
                 }]
             },
@@ -203,22 +173,16 @@
             }
         });
 
-        // filtro da tabela — JavaScript puro, sem precisar recarregar a página
-        const busca       = document.getElementById('busca');
+        const busca        = document.getElementById('busca');
         const filtroRegiao = document.getElementById('filtroRegiao');
-        const linhas      = document.querySelectorAll('#tabelaPaises tbody tr');
+        const linhas       = document.querySelectorAll('#tabelaPaises tbody tr');
 
         function filtrar() {
-            const textoBusca  = busca.value.toLowerCase();
+            const textoBusca   = busca.value.toLowerCase();
             const regiaoFiltro = filtroRegiao.value;
-
             linhas.forEach(linha => {
-                const nome   = linha.dataset.nome;
-                const regiao = linha.dataset.regiao;
-
-                const passaBusca  = nome.includes(textoBusca);
-                const passaRegiao = regiaoFiltro === '' || regiao === regiaoFiltro;
-
+                const passaBusca  = linha.dataset.nome.includes(textoBusca);
+                const passaRegiao = regiaoFiltro === '' || linha.dataset.regiao === regiaoFiltro;
                 linha.style.display = (passaBusca && passaRegiao) ? '' : 'none';
             });
         }
